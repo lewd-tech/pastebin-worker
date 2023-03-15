@@ -4,9 +4,13 @@ import { makeHighlight } from "./highlight.js"
 import { parseFormdata, getBoundary } from "./parseFormdata.js"
 import { staticPageMap } from './staticPages.js'
 import { makeMarkdown } from "./markdown.js";
-import conf from '../config.json'
+import conf_production from '../config.json'
+import conf_preview from '../config.preview.json'
+
+const conf = globalThis.ENVIRONMENT === "preview" ? conf_preview : conf_production
 
 import { getType } from "mime/lite.js"
+import {verifyAuth} from "./auth.js";
 
 addEventListener("fetch", (event) => {
   const { request } = event
@@ -27,9 +31,9 @@ async function handleRequest(request) {
   } catch (e) {
     console.log(e.stack)
     if (e instanceof WorkerError) {
-      return corsWrapResponse(new Response(e.message + "\n", { status: e.statusCode }))
+      return corsWrapResponse(new Response(`Error ${e.statusCode}: ${e.message}\n`, { status: e.statusCode }))
     } else {
-      return corsWrapResponse(new Response(e.message + "\n", { status: 500 }))
+      return corsWrapResponse(new Response(`Error 500: ${e.message}\n`, { status: 500 }))
     }
   }
 }
@@ -49,6 +53,11 @@ async function handleNormalRequest(request) {
 }
 
 async function handlePostOrPut(request, isPut) {
+  const authResponse = verifyAuth(request)
+  if (authResponse !== null) {
+    return authResponse
+  }
+
   const contentType = request.headers.get("content-type") || ""
   const url = new URL(request.url)
 
@@ -61,7 +70,7 @@ async function handlePostOrPut(request, isPut) {
     try {
       form = parseFormdata(uint8Array, getBoundary(contentType))
     } catch (e) {
-      return new WorkerError(400, "error occurs parsing formdata")
+      throw new WorkerError(400, "error occurs when parsing formdata")
     }
   } else {
     throw new WorkerError(400, `bad usage, please use 'multipart/form-data' instead of ${contentType}`)
@@ -144,6 +153,11 @@ async function handleGet(request) {
   const url = new URL(request.url)
   const { role, short, ext, passwd } = parsePath(url.pathname)
   if (staticPageMap.has(url.pathname)) {
+    // access to all static pages requires auth
+    const authResponse = verifyAuth(request)
+    if (authResponse !== null) {
+      return authResponse
+    }
     const item = await PB.get(staticPageMap.get(url.pathname))
     return new Response(item, {
       headers: { "content-type": "text/html;charset=UTF-8" }
