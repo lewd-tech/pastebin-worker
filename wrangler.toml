@@ -8,7 +8,7 @@ main = "src/index.js"
 vars = { ENVIRONMENT = "production" }
 route = { pattern = "shz.al", custom_domain = true }
 kv_namespaces = [
-  { binding = "PB", id = "abab31d6e30143eda25bc6a072318424", preview_id = "abab31d6e30143eda25bc6a072318424" },
+  { binding = "PB", id = "abab31d6e30143eda25bc6a072318424" },
 ]
 
 [env.preview]
