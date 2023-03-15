@@ -6,14 +6,14 @@ main = "src/index.js"
 
 # config for default production environment
 vars = { ENVIRONMENT = "production" }
-route = { pattern = "shz.al", custom_domain = true }
+# route = { pattern = "shz.al", custom_domain = true }
 kv_namespaces = [
   { binding = "PB", id = "abab31d6e30143eda25bc6a072318424" },
 ]
 
 [env.preview]
 vars = { ENVIRONMENT = "preview" }
-route = { pattern = "pb-preview.shz.al", custom_domain = true }
+# route = { pattern = "pb-preview.shz.al", custom_domain = true }
 minify = false
 
 kv_namespaces = [
